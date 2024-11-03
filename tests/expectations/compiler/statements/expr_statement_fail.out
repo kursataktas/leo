@@ -1,6 +1,11 @@
 namespace = "Compile"
 expectation = "Fail"
 outputs = ["""
+Error [EAST0372006]: function `foo` shadowed by
+    --> compiler-test:9:46
+     |
+   9 |     transition foo(flag: bool, a: u8, b: u8, foo: Foo, i: i8) -> u8 {
+     |                                              ^^^
 Error [ETYC0372053]: An expression statement must be a function call.
     --> compiler-test:10:9
      |
