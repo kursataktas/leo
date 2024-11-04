@@ -83,6 +83,8 @@ impl<N: Network> ParserContext<'_, N> {
     /// Also returns the span of the parsed token.
     pub fn parse_type(&mut self) -> Result<(Type, Span)> {
         if let Some(ident) = self.eat_identifier() {
+            self.check_identifier(&ident);
+
             // Check if using external type
             let file_type = self.look_ahead(1, |t| &t.token);
             if self.token.token == Token::Dot && (file_type == &Token::Aleo) {
@@ -98,6 +100,7 @@ impl<N: Network> ParserContext<'_, N> {
 
                 // Parse the record name
                 if let Some(record_name) = self.eat_identifier() {
+                    self.check_identifier(&record_name);
                     // Return the external type
                     return Ok((
                         Type::Composite(CompositeType { id: record_name, program: Some(ident.name) }),

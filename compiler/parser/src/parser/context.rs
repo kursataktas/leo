@@ -18,7 +18,7 @@ use crate::{Token, tokenizer::*};
 
 use leo_ast::*;
 use leo_errors::{ParserError, ParserWarning, Result, emitter::Handler};
-use leo_span::{Span, Symbol};
+use leo_span::{Span, Symbol, symbol::with_session_globals};
 
 use snarkvm::prelude::Network;
 
@@ -155,6 +155,7 @@ impl<'a, N: Network> ParserContext<'a, N> {
     pub(super) fn expect_identifier(&mut self) -> Result<Identifier> {
         self.eat_identifier()
             .ok_or_else(|| ParserError::unexpected_str(&self.token.token, "identifier", self.token.span).into())
+            .inspect(|id| self.check_identifier(id))
     }
 
     ///
@@ -256,5 +257,19 @@ impl<'a, N: Network> ParserContext<'a, N> {
     /// Returns true if the current token is `(`.
     pub(super) fn peek_is_left_par(&self) -> bool {
         matches!(self.token.token, Token::LeftParen)
+    }
+
+    pub(crate) fn check_identifier(&self, identifier: &Identifier) {
+        const FIELD_CAPACITY_BITS: usize = 250usize;
+        const FIELD_CAPACITY_BYTES: usize = FIELD_CAPACITY_BITS / 8;
+        let len = with_session_globals(|sg| identifier.name.as_str(sg, |s| s.len()));
+        if len > FIELD_CAPACITY_BYTES {
+            self.emit_err(ParserError::identifier_too_long(
+                identifier.name,
+                len,
+                FIELD_CAPACITY_BYTES,
+                identifier.span,
+            ));
+        }
     }
 }
